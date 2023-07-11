@@ -971,12 +971,13 @@ def multitask_mean(
         "wasserstein",
         "f1",
         "mcc",
+        "hamming",
     ]
 
     if metric in scale_dependent_metrics:
         return gmean(scores, axis=axis)
     elif metric in nonscale_dependent_metrics:
-        print("I changed this to nanmean")
+        # print("I changed this to nanmean")
         return np.nanmean(scores, axis=axis)
     else:
         raise NotImplementedError(

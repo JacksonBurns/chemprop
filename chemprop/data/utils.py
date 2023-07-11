@@ -879,16 +879,19 @@ def split_data(
 
     if split_type == "crossval":
         index_set = args.crossval_index_sets[args.seed]
-        data_split = []
-        for split in range(3):
-            split_indices = []
-            for index in index_set[split]:
-                with open(
-                    os.path.join(args.crossval_index_dir, f"{index}.pkl"), "rb"
-                ) as rf:
-                    split_indices.extend(pickle.load(rf))
-            data_split.append([data[i] for i in split_indices])
-        train, val, test = tuple(data_split)
+        # data_split = []
+        # for split in range(3):
+        #     split_indices = []
+        #     for index in index_set[split]:
+        #         with open(
+        #             os.path.join(args.crossval_index_dir, f"{index}.pkl"), "rb"
+        #         ) as rf:
+        #             split_indices.extend(pickle.load(rf))
+        #     data_split.append([data[i] for i in split_indices])
+        # train, val, test = tuple(data_split)
+        train = [data[i] for i in index_set[0]]
+        val = [data[i] for i in index_set[1]]
+        test = [data[i] for i in index_set[2]]
         return MoleculeDataset(train), MoleculeDataset(val), MoleculeDataset(test)
 
     elif split_type in {"cv", "cv-no-test"}:
@@ -1020,7 +1023,6 @@ def split_data(
         test = [data[i] for i in indices[train_val_size:]]
 
         return MoleculeDataset(train), MoleculeDataset(val), MoleculeDataset(test)
-
     else:
         raise ValueError(f'split_type "{split_type}" not supported.')
 

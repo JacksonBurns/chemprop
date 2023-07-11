@@ -8,7 +8,9 @@ from packaging import version
 from warnings import warn
 
 import torch
-from tap import Tap  # pip install typed-argument-parser (https://github.com/swansonk14/typed-argument-parser)
+from tap import (
+    Tap,
+)  # pip install typed-argument-parser (https://github.com/swansonk14/typed-argument-parser)
 import numpy as np
 
 import chemprop.data.utils
@@ -16,13 +18,33 @@ from chemprop.data import set_cache_mol, empty_cache
 from chemprop.features import get_available_features_generators
 
 
-Metric = Literal['auc', 'prc-auc', 'rmse', 'mae', 'mse', 'r2', 'accuracy', 'cross_entropy', 'binary_cross_entropy', 'sid', 'wasserstein', 'f1', 'mcc', 'bounded_rmse', 'bounded_mae', 'bounded_mse']
+Metric = Literal[
+    "auc",
+    "prc-auc",
+    "rmse",
+    "mae",
+    "mse",
+    "r2",
+    "accuracy",
+    "cross_entropy",
+    "binary_cross_entropy",
+    "sid",
+    "wasserstein",
+    "f1",
+    "mcc",
+    "bounded_rmse",
+    "bounded_mae",
+    "bounded_mse",
+    "hamming",
+]
 
 
-def get_checkpoint_paths(checkpoint_path: Optional[str] = None,
-                         checkpoint_paths: Optional[List[str]] = None,
-                         checkpoint_dir: Optional[str] = None,
-                         ext: str = '.pt') -> Optional[List[str]]:
+def get_checkpoint_paths(
+    checkpoint_path: Optional[str] = None,
+    checkpoint_paths: Optional[List[str]] = None,
+    checkpoint_dir: Optional[str] = None,
+    ext: str = ".pt",
+) -> Optional[List[str]]:
     """
     Gets a list of checkpoint paths either from a single checkpoint path or from a directory of checkpoints.
 
@@ -37,8 +59,16 @@ def get_checkpoint_paths(checkpoint_path: Optional[str] = None,
     :param ext: The extension which defines a checkpoint file.
     :return: A list of paths to checkpoints or None if no checkpoint path(s)/dir are provided.
     """
-    if sum(var is not None for var in [checkpoint_dir, checkpoint_path, checkpoint_paths]) > 1:
-        raise ValueError('Can only specify one of checkpoint_dir, checkpoint_path, and checkpoint_paths')
+    if (
+        sum(
+            var is not None
+            for var in [checkpoint_dir, checkpoint_path, checkpoint_paths]
+        )
+        > 1
+    ):
+        raise ValueError(
+            "Can only specify one of checkpoint_dir, checkpoint_path, and checkpoint_paths"
+        )
 
     if checkpoint_path is not None:
         return [checkpoint_path]
@@ -55,7 +85,9 @@ def get_checkpoint_paths(checkpoint_path: Optional[str] = None,
                     checkpoint_paths.append(os.path.join(root, fname))
 
         if len(checkpoint_paths) == 0:
-            raise ValueError(f'Failed to find any checkpoints with extension "{ext}" in directory "{checkpoint_dir}"')
+            raise ValueError(
+                f'Failed to find any checkpoints with extension "{ext}" in directory "{checkpoint_dir}"'
+            )
 
         return checkpoint_paths
 
@@ -95,7 +127,7 @@ class CommonArgs(Tap):
     """Number of workers for the parallel data loading (0 means sequential)."""
     batch_size: int = 50
     """Batch size."""
-    atom_descriptors: Literal['feature', 'descriptor'] = None
+    atom_descriptors: Literal["feature", "descriptor"] = None
     """
     Custom extra atom descriptors.
     :code:`feature`: used as atom features to featurize a given molecule.
@@ -103,7 +135,7 @@ class CommonArgs(Tap):
     """
     atom_descriptors_path: str = None
     """Path to the extra atom descriptors."""
-    bond_descriptors: Literal['feature', 'descriptor'] = None
+    bond_descriptors: Literal["feature", "descriptor"] = None
     """
     Custom extra bond descriptors.
     :code:`feature`: used as bond features to featurize a given molecule.
@@ -137,13 +169,13 @@ class CommonArgs(Tap):
     def device(self) -> torch.device:
         """The :code:`torch.device` on which to load and process data and models."""
         if not self.cuda:
-            return torch.device('cpu')
+            return torch.device("cpu")
 
-        return torch.device('cuda', self.gpu)
+        return torch.device("cuda", self.gpu)
 
     @device.setter
     def device(self, device: torch.device) -> None:
-        self.cuda = device.type == 'cuda'
+        self.cuda = device.type == "cuda"
         self.gpu = device.index
 
     @property
@@ -204,8 +236,10 @@ class CommonArgs(Tap):
         self._bond_descriptors_size = bond_descriptors_size
 
     def configure(self) -> None:
-        self.add_argument('--gpu', choices=list(range(torch.cuda.device_count())))
-        self.add_argument('--features_generator', choices=get_available_features_generators())
+        self.add_argument("--gpu", choices=list(range(torch.cuda.device_count())))
+        self.add_argument(
+            "--features_generator", choices=get_available_features_generators()
+        )
 
     def process_args(self) -> None:
         # Load checkpoint paths
@@ -216,26 +250,40 @@ class CommonArgs(Tap):
         )
 
         # Validate features
-        if self.features_generator is not None and 'rdkit_2d_normalized' in self.features_generator and self.features_scaling:
-            raise ValueError('When using rdkit_2d_normalized features, --no_features_scaling must be specified.')
+        if (
+            self.features_generator is not None
+            and "rdkit_2d_normalized" in self.features_generator
+            and self.features_scaling
+        ):
+            raise ValueError(
+                "When using rdkit_2d_normalized features, --no_features_scaling must be specified."
+            )
 
         # Validate atom descriptors
         if (self.atom_descriptors is None) != (self.atom_descriptors_path is None):
-            raise ValueError('If atom_descriptors is specified, then an atom_descriptors_path must be provided '
-                             'and vice versa.')
+            raise ValueError(
+                "If atom_descriptors is specified, then an atom_descriptors_path must be provided "
+                "and vice versa."
+            )
 
         if self.atom_descriptors is not None and self.number_of_molecules > 1:
-            raise NotImplementedError('Atom descriptors are currently only supported with one molecule '
-                                      'per input (i.e., number_of_molecules = 1).')
+            raise NotImplementedError(
+                "Atom descriptors are currently only supported with one molecule "
+                "per input (i.e., number_of_molecules = 1)."
+            )
 
         # Validate bond descriptors
         if (self.bond_descriptors is None) != (self.bond_descriptors_path is None):
-            raise ValueError('If bond_descriptors is specified, then an bond_descriptors_path must be provided '
-                             'and vice versa.')
+            raise ValueError(
+                "If bond_descriptors is specified, then an bond_descriptors_path must be provided "
+                "and vice versa."
+            )
 
         if self.bond_descriptors is not None and self.number_of_molecules > 1:
-            raise NotImplementedError('Bond descriptors are currently only supported with one molecule '
-                                      'per input (i.e., number_of_molecules = 1).')
+            raise NotImplementedError(
+                "Bond descriptors are currently only supported with one molecule "
+                "per input (i.e., number_of_molecules = 1)."
+            )
 
         set_cache_mol(not self.no_cache_mol)
 
@@ -256,9 +304,20 @@ class TrainArgs(CommonArgs):
     """
     ignore_columns: List[str] = None
     """Name of the columns to ignore when :code:`target_columns` is not provided."""
-    dataset_type: Literal['regression', 'classification', 'multiclass', 'spectra']
+    dataset_type: Literal["regression", "classification", "multiclass", "spectra"]
     """Type of dataset. This determines the default loss function used during training."""
-    loss_function: Literal['mse', 'bounded_mse', 'binary_cross_entropy', 'cross_entropy', 'mcc', 'sid', 'wasserstein', 'mve', 'evidential', 'dirichlet'] = None
+    loss_function: Literal[
+        "mse",
+        "bounded_mse",
+        "binary_cross_entropy",
+        "cross_entropy",
+        "mcc",
+        "sid",
+        "wasserstein",
+        "mve",
+        "evidential",
+        "dirichlet",
+    ] = None
     """Choice of loss function. Loss functions are limited to compatible dataset types."""
     multiclass_num_classes: int = 3
     """Number of classes when running multiclass classification."""
@@ -272,7 +331,16 @@ class TrainArgs(CommonArgs):
     """Path to weights for each molecule in the training data, affecting the relative weight of molecules in the loss function"""
     target_weights: List[float] = None
     """Weights associated with each target, affecting the relative weight of targets in the loss function. Must match the number of target columns."""
-    split_type: Literal['random', 'scaffold_balanced', 'predetermined', 'crossval', 'cv', 'cv-no-test', 'index_predetermined', 'random_with_repeated_smiles'] = 'random'
+    split_type: Literal[
+        "random",
+        "scaffold_balanced",
+        "predetermined",
+        "crossval",
+        "cv",
+        "cv-no-test",
+        "index_predetermined",
+        "random_with_repeated_smiles",
+    ] = "random"
     """Method of splitting the data into train/val/test."""
     split_sizes: List[float] = None
     """Split proportions for train/validation/test sets."""
@@ -352,7 +420,7 @@ class TrainArgs(CommonArgs):
     Only relevant if :code:`number_of_molecules > 1`"""
     dropout: float = 0.0
     """Dropout probability."""
-    activation: Literal['ReLU', 'LeakyReLU', 'PReLU', 'tanh', 'SELU', 'ELU'] = 'ReLU'
+    activation: Literal["ReLU", "LeakyReLU", "PReLU", "tanh", "SELU", "ELU"] = "ReLU"
     """Activation function."""
     atom_messages: bool = False
     """Centers messages on atoms instead of on bonds."""
@@ -391,7 +459,7 @@ class TrainArgs(CommonArgs):
     """
     ensemble_size: int = 1
     """Number of models in ensemble."""
-    aggregation: Literal['mean', 'sum', 'norm'] = 'mean'
+    aggregation: Literal["mean", "sum", "norm"] = "mean"
     """Aggregation scheme for atomic vectors into molecular vectors"""
     aggregation_norm: int = 100
     """For norm aggregation, number by which to divide summed up atomic features"""
@@ -399,7 +467,14 @@ class TrainArgs(CommonArgs):
     """
     Whether to adjust MPNN layer to take reactions as input instead of molecules.
     """
-    reaction_mode: Literal['reac_prod', 'reac_diff', 'prod_diff', 'reac_prod_balance', 'reac_diff_balance', 'prod_diff_balance'] = 'reac_diff'
+    reaction_mode: Literal[
+        "reac_prod",
+        "reac_diff",
+        "prod_diff",
+        "reac_prod_balance",
+        "reac_diff_balance",
+        "prod_diff_balance",
+    ] = "reac_diff"
     """
     Choices for construction of atom and bond features for reactions
     :code:`reac_prod`: concatenates the reactants feature with the products feature.
@@ -464,7 +539,7 @@ class TrainArgs(CommonArgs):
     """Maximum magnitude of gradient during training."""
     class_balance: bool = False
     """Trains with an equal number of positives and negatives in each batch."""
-    spectra_activation: Literal['exp', 'softplus'] = 'exp'
+    spectra_activation: Literal["exp", "softplus"] = "exp"
     """Indicates which function to use in dataset_type spectra training to constrain outputs to be positive."""
     spectra_target_floor: float = 1e-8
     """Values in targets for dataset type spectra are replaced with this value, intended to be a small positive number used to enforce positive values."""
@@ -515,12 +590,27 @@ class TrainArgs(CommonArgs):
     @property
     def minimize_score(self) -> bool:
         """Whether the model should try to minimize the score metric or maximize it."""
-        return self.metric in {'rmse', 'mae', 'mse', 'cross_entropy', 'binary_cross_entropy', 'sid', 'wasserstein', 'bounded_mse', 'bounded_mae', 'bounded_rmse'}
+        return self.metric in {
+            "rmse",
+            "mae",
+            "mse",
+            "cross_entropy",
+            "binary_cross_entropy",
+            "sid",
+            "wasserstein",
+            "bounded_mse",
+            "bounded_mae",
+            "bounded_rmse",
+        }
 
     @property
     def use_input_features(self) -> bool:
         """Whether the model is using additional molecule-level features."""
-        return self.features_generator is not None or self.features_path is not None or self.phase_features_path is not None
+        return (
+            self.features_generator is not None
+            or self.features_path is not None
+            or self.phase_features_path is not None
+        )
 
     @property
     def num_lrs(self) -> int:
@@ -579,7 +669,7 @@ class TrainArgs(CommonArgs):
         to the additional bond features."
         """
         return not self.no_bond_descriptor_scaling
-    
+
     @property
     def shared_atom_bond_ffn(self) -> bool:
         """
@@ -602,7 +692,9 @@ class TrainArgs(CommonArgs):
         if self.is_atom_bond_targets and self.constraints_path:
             if not self._atom_constraints:
                 header = chemprop.data.utils.get_header(self.constraints_path)
-                self._atom_constraints = [target in header for target in self.atom_targets]
+                self._atom_constraints = [
+                    target in header for target in self.atom_targets
+                ]
         else:
             self._atom_constraints = [False] * len(self.atom_targets)
         return self._atom_constraints
@@ -615,7 +707,9 @@ class TrainArgs(CommonArgs):
         if self.is_atom_bond_targets and self.constraints_path:
             if not self._bond_constraints:
                 header = chemprop.data.utils.get_header(self.constraints_path)
-                self._bond_constraints = [target in header for target in self.bond_targets]
+                self._bond_constraints = [
+                    target in header for target in self.bond_targets
+                ]
         else:
             self._bond_constraints = [False] * len(self.bond_targets)
         return self._bond_constraints
@@ -627,7 +721,9 @@ class TrainArgs(CommonArgs):
 
         # Adapt the number of molecules for reaction_solvent mode
         if self.reaction_solvent is True and self.number_of_molecules != 2:
-            raise ValueError('In reaction_solvent mode, --number_of_molecules 2 must be specified.')
+            raise ValueError(
+                "In reaction_solvent mode, --number_of_molecules 2 must be specified."
+            )
 
         # Process SMILES columns
         self.smiles_columns = chemprop.data.utils.preprocess_smiles_columns(
@@ -645,7 +741,11 @@ class TrainArgs(CommonArgs):
 
         # Determine the target_columns when training atomic and bond targets
         if self.is_atom_bond_targets:
-            self.atom_targets, self.bond_targets, self.molecule_targets = chemprop.data.utils.get_mixed_task_names(
+            (
+                self.atom_targets,
+                self.bond_targets,
+                self.molecule_targets,
+            ) = chemprop.data.utils.get_mixed_task_names(
                 path=self.data_path,
                 smiles_columns=self.smiles_columns,
                 target_columns=self.target_columns,
@@ -662,22 +762,32 @@ class TrainArgs(CommonArgs):
         # Check whether atomic/bond constraints have been applied on the correct dataset_type
         if self.constraints_path:
             if not self.is_atom_bond_targets:
-                raise ValueError('Constraints on atomic/bond targets can only be used in atomic/bond properties prediction.')
-            if self.dataset_type != 'regression':
-                raise ValueError(f'In atomic/bond properties prediction, atomic/bond constraints are not supported for {self.dataset_type}.')
+                raise ValueError(
+                    "Constraints on atomic/bond targets can only be used in atomic/bond properties prediction."
+                )
+            if self.dataset_type != "regression":
+                raise ValueError(
+                    f"In atomic/bond properties prediction, atomic/bond constraints are not supported for {self.dataset_type}."
+                )
 
         # Check whether the number of input columns is one for the atomic/bond mode
         if self.is_atom_bond_targets:
             if self.number_of_molecules != 1:
-                raise ValueError('In atomic/bond properties prediction, exactly one smiles column must be provided.')
+                raise ValueError(
+                    "In atomic/bond properties prediction, exactly one smiles column must be provided."
+                )
 
         # Check whether the number of input columns is two for the reaction_solvent mode
         if self.reaction_solvent is True and len(self.smiles_columns) != 2:
-            raise ValueError('In reaction_solvent mode, exactly two smiles column must be provided (one for reactions, and one for molecules)')
+            raise ValueError(
+                "In reaction_solvent mode, exactly two smiles column must be provided (one for reactions, and one for molecules)"
+            )
 
         # Validate reaction/reaction_solvent mode
         if self.reaction is True and self.reaction_solvent is True:
-            raise ValueError('Only reaction or reaction_solvent mode can be used, not both.')
+            raise ValueError(
+                "Only reaction or reaction_solvent mode can be used, not both."
+            )
 
         # Create temporary directory as save directory if not provided
         if self.save_dir is None:
@@ -690,52 +800,104 @@ class TrainArgs(CommonArgs):
 
         # Process and validate metric and loss function
         if self.metric is None:
-            if self.dataset_type == 'classification':
-                self.metric = 'auc'
-            elif self.dataset_type == 'multiclass':
-                self.metric = 'cross_entropy'
-            elif self.dataset_type == 'spectra':
-                self.metric = 'sid'
-            elif self.dataset_type == 'regression' and self.loss_function == 'bounded_mse':
-                self.metric = 'bounded_mse'
-            elif self.dataset_type == 'regression':
-                self.metric = 'rmse'
+            if self.dataset_type == "classification":
+                self.metric = "auc"
+            elif self.dataset_type == "multiclass":
+                self.metric = "cross_entropy"
+            elif self.dataset_type == "spectra":
+                self.metric = "sid"
+            elif (
+                self.dataset_type == "regression"
+                and self.loss_function == "bounded_mse"
+            ):
+                self.metric = "bounded_mse"
+            elif self.dataset_type == "regression":
+                self.metric = "rmse"
             else:
-                raise ValueError(f'Dataset type {self.dataset_type} is not supported.')
+                raise ValueError(f"Dataset type {self.dataset_type} is not supported.")
 
         if self.metric in self.extra_metrics:
-            raise ValueError(f'Metric {self.metric} is both the metric and is in extra_metrics. '
-                             f'Please only include it once.')
+            raise ValueError(
+                f"Metric {self.metric} is both the metric and is in extra_metrics. "
+                f"Please only include it once."
+            )
 
         for metric in self.metrics:
-            if not any([(self.dataset_type == 'classification' and metric in ['auc', 'prc-auc', 'accuracy', 'binary_cross_entropy', 'f1', 'mcc']),
-                        (self.dataset_type == 'regression' and metric in ['rmse', 'mae', 'mse', 'r2', 'bounded_rmse', 'bounded_mae', 'bounded_mse']),
-                        (self.dataset_type == 'multiclass' and metric in ['cross_entropy', 'accuracy', 'f1', 'mcc']),
-                        (self.dataset_type == 'spectra' and metric in ['sid', 'wasserstein'])]):
-                raise ValueError(f'Metric "{metric}" invalid for dataset type "{self.dataset_type}".')
+            if not any(
+                [
+                    (
+                        self.dataset_type == "classification"
+                        and metric
+                        in [
+                            "auc",
+                            "prc-auc",
+                            "accuracy",
+                            "binary_cross_entropy",
+                            "f1",
+                            "mcc",
+                            "hamming",
+                        ]
+                    ),
+                    (
+                        self.dataset_type == "regression"
+                        and metric
+                        in [
+                            "rmse",
+                            "mae",
+                            "mse",
+                            "r2",
+                            "bounded_rmse",
+                            "bounded_mae",
+                            "bounded_mse",
+                        ]
+                    ),
+                    (
+                        self.dataset_type == "multiclass"
+                        and metric in ["cross_entropy", "accuracy", "f1", "mcc"]
+                    ),
+                    (
+                        self.dataset_type == "spectra"
+                        and metric in ["sid", "wasserstein"]
+                    ),
+                ]
+            ):
+                raise ValueError(
+                    f'Metric "{metric}" invalid for dataset type "{self.dataset_type}".'
+                )
 
         if self.loss_function is None:
-            if self.dataset_type == 'classification':
-                self.loss_function = 'binary_cross_entropy'
-            elif self.dataset_type == 'multiclass':
-                self.loss_function = 'cross_entropy'
-            elif self.dataset_type == 'spectra':
-                self.loss_function = 'sid'
-            elif self.dataset_type == 'regression':
-                self.loss_function = 'mse'
+            if self.dataset_type == "classification":
+                self.loss_function = "binary_cross_entropy"
+            elif self.dataset_type == "multiclass":
+                self.loss_function = "cross_entropy"
+            elif self.dataset_type == "spectra":
+                self.loss_function = "sid"
+            elif self.dataset_type == "regression":
+                self.loss_function = "mse"
             else:
-                raise ValueError(f'Default loss function not configured for dataset type {self.dataset_type}.')
+                raise ValueError(
+                    f"Default loss function not configured for dataset type {self.dataset_type}."
+                )
 
-        if self.loss_function != 'bounded_mse' and any(metric in ['bounded_mse', 'bounded_rmse', 'bounded_mae'] for metric in self.metrics):
-            raise ValueError('Bounded metrics can only be used in conjunction with the regression loss function bounded_mse.')
+        if self.loss_function != "bounded_mse" and any(
+            metric in ["bounded_mse", "bounded_rmse", "bounded_mae"]
+            for metric in self.metrics
+        ):
+            raise ValueError(
+                "Bounded metrics can only be used in conjunction with the regression loss function bounded_mse."
+            )
 
         # Validate class balance
-        if self.class_balance and self.dataset_type != 'classification':
-            raise ValueError('Class balance can only be applied if the dataset type is classification.')
+        if self.class_balance and self.dataset_type != "classification":
+            raise ValueError(
+                "Class balance can only be applied if the dataset type is classification."
+            )
 
         # Validate features
         if self.features_only and not (self.features_generator or self.features_path):
-            raise ValueError('When using features_only, a features_generator or features_path must be provided.')
+            raise ValueError(
+                "When using features_only, a features_generator or features_path must be provided."
+            )
 
         # Handle FFN hidden size
         if self.ffn_hidden_size is None:
@@ -743,124 +905,218 @@ class TrainArgs(CommonArgs):
 
         # Handle MPN variants
         if self.atom_messages and self.undirected:
-            raise ValueError('Undirected is unnecessary when using atom_messages '
-                             'since atom_messages are by their nature undirected.')
+            raise ValueError(
+                "Undirected is unnecessary when using atom_messages "
+                "since atom_messages are by their nature undirected."
+            )
 
         # Validate split type settings
-        if not (self.split_type == 'predetermined') == (self.folds_file is not None) == (self.test_fold_index is not None):
-            raise ValueError('When using predetermined split type, must provide folds_file and test_fold_index.')
+        if (
+            not (self.split_type == "predetermined")
+            == (self.folds_file is not None)
+            == (self.test_fold_index is not None)
+        ):
+            raise ValueError(
+                "When using predetermined split type, must provide folds_file and test_fold_index."
+            )
 
-        if not (self.split_type == 'crossval') == (self.crossval_index_dir is not None):
-            raise ValueError('When using crossval split type, must provide crossval_index_dir.')
+        if not (self.split_type == "crossval") == (self.crossval_index_dir is not None):
+            raise ValueError(
+                "When using crossval split type, must provide crossval_index_dir."
+            )
 
-        if not (self.split_type in ['crossval', 'index_predetermined']) == (self.crossval_index_file is not None):
-            raise ValueError('When using crossval or index_predetermined split type, must provide crossval_index_file.')
+        if not (self.split_type in ["crossval", "index_predetermined"]) == (
+            self.crossval_index_file is not None
+        ):
+            raise ValueError(
+                "When using crossval or index_predetermined split type, must provide crossval_index_file."
+            )
 
-        if self.split_type in ['crossval', 'index_predetermined']:
-            with open(self.crossval_index_file, 'rb') as rf:
+        if self.split_type in ["crossval", "index_predetermined"]:
+            with open(self.crossval_index_file, "rb") as rf:
                 self._crossval_index_sets = pickle.load(rf)
             self.num_folds = len(self.crossval_index_sets)
             self.seed = 0
 
         # Validate split size entry and set default values
         if self.split_sizes is None:
-            if self.separate_val_path is None and self.separate_test_path is None: # separate data paths are not provided
+            if (
+                self.separate_val_path is None and self.separate_test_path is None
+            ):  # separate data paths are not provided
                 self.split_sizes = [0.8, 0.1, 0.1]
-            elif self.separate_val_path is not None and self.separate_test_path is None: # separate val path only
-                self.split_sizes = [0.8, 0., 0.2]
-            elif self.separate_val_path is None and self.separate_test_path is not None: # separate test path only
-                self.split_sizes = [0.8, 0.2, 0.]
-            else: # both separate data paths are provided
-                self.split_sizes = [1., 0., 0.]
+            elif (
+                self.separate_val_path is not None and self.separate_test_path is None
+            ):  # separate val path only
+                self.split_sizes = [0.8, 0.0, 0.2]
+            elif (
+                self.separate_val_path is None and self.separate_test_path is not None
+            ):  # separate test path only
+                self.split_sizes = [0.8, 0.2, 0.0]
+            else:  # both separate data paths are provided
+                self.split_sizes = [1.0, 0.0, 0.0]
 
         else:
             if not np.isclose(sum(self.split_sizes), 1):
-                raise ValueError(f'Provided split sizes of {self.split_sizes} do not sum to 1.')
+                raise ValueError(
+                    f"Provided split sizes of {self.split_sizes} do not sum to 1."
+                )
             if any([size < 0 for size in self.split_sizes]):
-                raise ValueError(f'Split sizes must be non-negative. Received split sizes: {self.split_sizes}')
-
+                raise ValueError(
+                    f"Split sizes must be non-negative. Received split sizes: {self.split_sizes}"
+                )
 
             if len(self.split_sizes) not in [2, 3]:
-                raise ValueError(f'Three values should be provided for train/val/test split sizes. Instead received {len(self.split_sizes)} value(s).')
+                raise ValueError(
+                    f"Three values should be provided for train/val/test split sizes. Instead received {len(self.split_sizes)} value(s)."
+                )
 
-            if self.separate_val_path is None and self.separate_test_path is None:  # separate data paths are not provided
+            if (
+                self.separate_val_path is None and self.separate_test_path is None
+            ):  # separate data paths are not provided
                 if len(self.split_sizes) != 3:
-                    raise ValueError(f'Three values should be provided for train/val/test split sizes. Instead received {len(self.split_sizes)} value(s).')
-                if self.split_sizes[0] == 0.:
-                    raise ValueError(f'Provided split size for train split must be nonzero. Received split size {self.split_sizes[0]}')
-                if self.split_sizes[1] == 0.:
-                    raise ValueError(f'Provided split size for validation split must be nonzero. Received split size {self.split_sizes[1]}')
+                    raise ValueError(
+                        f"Three values should be provided for train/val/test split sizes. Instead received {len(self.split_sizes)} value(s)."
+                    )
+                if self.split_sizes[0] == 0.0:
+                    raise ValueError(
+                        f"Provided split size for train split must be nonzero. Received split size {self.split_sizes[0]}"
+                    )
+                if self.split_sizes[1] == 0.0:
+                    raise ValueError(
+                        f"Provided split size for validation split must be nonzero. Received split size {self.split_sizes[1]}"
+                    )
 
-            elif self.separate_val_path is not None and self.separate_test_path is None: # separate val path only
-                if len(self.split_sizes) == 2: # allow input of just 2 values
-                    self.split_sizes = [self.split_sizes[0], 0., self.split_sizes[1]]
-                if self.split_sizes[0] == 0.:
-                    raise ValueError('Provided split size for train split must be nonzero.')
-                if self.split_sizes[1] != 0.:
-                    raise ValueError(f'Provided split size for validation split must be 0 because validation set is provided separately. Received split size {self.split_sizes[1]}')
+            elif (
+                self.separate_val_path is not None and self.separate_test_path is None
+            ):  # separate val path only
+                if len(self.split_sizes) == 2:  # allow input of just 2 values
+                    self.split_sizes = [self.split_sizes[0], 0.0, self.split_sizes[1]]
+                if self.split_sizes[0] == 0.0:
+                    raise ValueError(
+                        "Provided split size for train split must be nonzero."
+                    )
+                if self.split_sizes[1] != 0.0:
+                    raise ValueError(
+                        f"Provided split size for validation split must be 0 because validation set is provided separately. Received split size {self.split_sizes[1]}"
+                    )
 
-            elif self.separate_val_path is None and self.separate_test_path is not None: # separate test path only
-                if len(self.split_sizes) == 2: # allow input of just 2 values
-                    self.split_sizes = [self.split_sizes[0], self.split_sizes[1], 0.]
-                if self.split_sizes[0] == 0.:
-                    raise ValueError('Provided split size for train split must be nonzero.')
-                if self.split_sizes[1] == 0.:
-                    raise ValueError('Provided split size for validation split must be nonzero.')
-                if self.split_sizes[2] != 0.:
-                    raise ValueError(f'Provided split size for test split must be 0 because test set is provided separately. Received split size {self.split_sizes[2]}')
+            elif (
+                self.separate_val_path is None and self.separate_test_path is not None
+            ):  # separate test path only
+                if len(self.split_sizes) == 2:  # allow input of just 2 values
+                    self.split_sizes = [self.split_sizes[0], self.split_sizes[1], 0.0]
+                if self.split_sizes[0] == 0.0:
+                    raise ValueError(
+                        "Provided split size for train split must be nonzero."
+                    )
+                if self.split_sizes[1] == 0.0:
+                    raise ValueError(
+                        "Provided split size for validation split must be nonzero."
+                    )
+                if self.split_sizes[2] != 0.0:
+                    raise ValueError(
+                        f"Provided split size for test split must be 0 because test set is provided separately. Received split size {self.split_sizes[2]}"
+                    )
 
-
-            else: # both separate data paths are provided
-                if self.split_sizes != [1., 0., 0.]:
-                    raise ValueError(f'Separate data paths were provided for val and test splits. Split sizes should not also be provided. Received split sizes: {self.split_sizes}')
+            else:  # both separate data paths are provided
+                if self.split_sizes != [1.0, 0.0, 0.0]:
+                    raise ValueError(
+                        f"Separate data paths were provided for val and test splits. Split sizes should not also be provided. Received split sizes: {self.split_sizes}"
+                    )
 
         # Test settings
         if self.test:
             self.epochs = 0
 
         # Validate features are provided for separate validation or test set for each of the kinds of additional features
-        for (features_argument, base_features_path, val_features_path, test_features_path) in [
-            ('`--features_path`', self.features_path, self.separate_val_features_path, self.separate_test_features_path),
-            ('`--phase_features_path`', self.phase_features_path, self.separate_val_phase_features_path, self.separate_test_phase_features_path),
-            ('`--atom_descriptors_path`', self.atom_descriptors_path, self.separate_val_atom_descriptors_path, self.separate_test_atom_descriptors_path),
-            ('`--bond_descriptors_path`', self.bond_descriptors_path, self.separate_val_bond_descriptors_path, self.separate_test_bond_descriptors_path),
-            ('`--constraints_path`', self.constraints_path, self.separate_val_constraints_path, self.separate_test_constraints_path)
+        for (
+            features_argument,
+            base_features_path,
+            val_features_path,
+            test_features_path,
+        ) in [
+            (
+                "`--features_path`",
+                self.features_path,
+                self.separate_val_features_path,
+                self.separate_test_features_path,
+            ),
+            (
+                "`--phase_features_path`",
+                self.phase_features_path,
+                self.separate_val_phase_features_path,
+                self.separate_test_phase_features_path,
+            ),
+            (
+                "`--atom_descriptors_path`",
+                self.atom_descriptors_path,
+                self.separate_val_atom_descriptors_path,
+                self.separate_test_atom_descriptors_path,
+            ),
+            (
+                "`--bond_descriptors_path`",
+                self.bond_descriptors_path,
+                self.separate_val_bond_descriptors_path,
+                self.separate_test_bond_descriptors_path,
+            ),
+            (
+                "`--constraints_path`",
+                self.constraints_path,
+                self.separate_val_constraints_path,
+                self.separate_test_constraints_path,
+            ),
         ]:
             if base_features_path is not None:
                 if self.separate_val_path is not None and val_features_path is None:
-                    raise ValueError(f'Additional features were provided using the argument {features_argument}. The same kinds of features must be provided for the separate validation set.')
+                    raise ValueError(
+                        f"Additional features were provided using the argument {features_argument}. The same kinds of features must be provided for the separate validation set."
+                    )
                 if self.separate_test_path is not None and test_features_path is None:
-                    raise ValueError(f'Additional features were provided using the argument {features_argument}. The same kinds of features must be provided for the separate test set.')
+                    raise ValueError(
+                        f"Additional features were provided using the argument {features_argument}. The same kinds of features must be provided for the separate test set."
+                    )
 
         # validate extra atom descriptor options
-        if self.overwrite_default_atom_features and self.atom_descriptors != 'feature':
-            raise NotImplementedError('Overwriting of the default atom descriptors can only be used if the'
-                                      'provided atom descriptors are features.')
+        if self.overwrite_default_atom_features and self.atom_descriptors != "feature":
+            raise NotImplementedError(
+                "Overwriting of the default atom descriptors can only be used if the"
+                "provided atom descriptors are features."
+            )
 
         if not self.atom_descriptor_scaling and self.atom_descriptors is None:
-            raise ValueError('Atom descriptor scaling is only possible if additional atom features are provided.')
+            raise ValueError(
+                "Atom descriptor scaling is only possible if additional atom features are provided."
+            )
 
         # validate extra bond descriptor options
-        if self.overwrite_default_bond_features and self.bond_descriptors != 'feature':
-            raise NotImplementedError('Overwriting of the default bond descriptors can only be used if the'
-                                      'provided bond descriptors are features.')
+        if self.overwrite_default_bond_features and self.bond_descriptors != "feature":
+            raise NotImplementedError(
+                "Overwriting of the default bond descriptors can only be used if the"
+                "provided bond descriptors are features."
+            )
 
         if not self.bond_descriptor_scaling and self.bond_descriptors is None:
-            raise ValueError('Bond descriptor scaling is only possible if additional bond features are provided.')
+            raise ValueError(
+                "Bond descriptor scaling is only possible if additional bond features are provided."
+            )
 
-        if self.bond_descriptors == 'descriptor' and not self.is_atom_bond_targets:
-            raise NotImplementedError('Bond descriptors as descriptor can only be used with `--is_atom_bond_targets`.')
+        if self.bond_descriptors == "descriptor" and not self.is_atom_bond_targets:
+            raise NotImplementedError(
+                "Bond descriptors as descriptor can only be used with `--is_atom_bond_targets`."
+            )
 
         # normalize target weights
         if self.target_weights is not None:
-            avg_weight = sum(self.target_weights)/len(self.target_weights)
-            self.target_weights = [w/avg_weight for w in self.target_weights]
+            avg_weight = sum(self.target_weights) / len(self.target_weights)
+            self.target_weights = [w / avg_weight for w in self.target_weights]
             if min(self.target_weights) < 0:
-                raise ValueError('Provided target weights must be non-negative.')
+                raise ValueError("Provided target weights must be non-negative.")
 
         # check if key molecule index is outside of the number of molecules
         if self.split_key_molecule >= self.number_of_molecules:
-            raise ValueError('The index provided with the argument `--split_key_molecule` must be less than the number of molecules. Note that this index begins with 0 for the first molecule. ')
+            raise ValueError(
+                "The index provided with the argument `--split_key_molecule` must be less than the number of molecules. Note that this index begins with 0 for the first molecule. "
+            )
 
 
 class PredictArgs(CommonArgs):
@@ -878,17 +1134,24 @@ class PredictArgs(CommonArgs):
     """Whether to return the predictions made by each of the individual models rather than the average of the ensemble"""
     # Uncertainty arguments
     uncertainty_method: Literal[
-        'mve',
-        'ensemble',
-        'evidential_epistemic',
-        'evidential_aleatoric',
-        'evidential_total',
-        'classification',
-        'dropout',
-        'spectra_roundrobin',
+        "mve",
+        "ensemble",
+        "evidential_epistemic",
+        "evidential_aleatoric",
+        "evidential_total",
+        "classification",
+        "dropout",
+        "spectra_roundrobin",
     ] = None
     """The method of calculating uncertainty."""
-    calibration_method: Literal['zscaling', 'tscaling', 'zelikman_interval', 'mve_weighting', 'platt', 'isotonic'] = None
+    calibration_method: Literal[
+        "zscaling",
+        "tscaling",
+        "zelikman_interval",
+        "mve_weighting",
+        "platt",
+        "isotonic",
+    ] = None
     """Methods used for calibrating the uncertainty calculated with uncertainty method."""
     evaluation_methods: List[str] = None
     """The methods used for evaluating the uncertainty performance if the test data provided includes targets.
@@ -901,7 +1164,7 @@ class PredictArgs(CommonArgs):
     """The number of samples to use for Monte Carlo dropout uncertainty estimation. Distinct from the dropout used during training."""
     calibration_interval_percentile: float = 95
     """Sets the percentile used in the calibration methods. Must be in the range (1,100)."""
-    regression_calibrator_metric: Literal['stdev', 'interval'] = None
+    regression_calibrator_metric: Literal["stdev", "interval"] = None
     """Regression calibrators can output either a stdev or an inverval. """
     calibration_path: str = None
     """Path to data file to be used for uncertainty calibration."""
@@ -923,13 +1186,17 @@ class PredictArgs(CommonArgs):
         super(PredictArgs, self).process_args()
 
         if self.regression_calibrator_metric is None:
-            if self.calibration_method == 'zelikman_interval':
-                self.regression_calibrator_metric = 'interval'
+            if self.calibration_method == "zelikman_interval":
+                self.regression_calibrator_metric = "interval"
             else:
-                self.regression_calibrator_metric = 'stdev'
+                self.regression_calibrator_metric = "stdev"
 
-        if self.uncertainty_method == 'dropout' and version.parse(torch.__version__) < version.parse('1.9.0'):
-            raise ValueError('Dropout uncertainty is only supported for pytorch versions >= 1.9.0')
+        if self.uncertainty_method == "dropout" and version.parse(
+            torch.__version__
+        ) < version.parse("1.9.0"):
+            raise ValueError(
+                "Dropout uncertainty is only supported for pytorch versions >= 1.9.0"
+            )
 
         self.smiles_columns = chemprop.data.utils.preprocess_smiles_columns(
             path=self.test_path,
@@ -938,43 +1205,70 @@ class PredictArgs(CommonArgs):
         )
 
         if self.checkpoint_paths is None or len(self.checkpoint_paths) == 0:
-            raise ValueError('Found no checkpoints. Must specify --checkpoint_path <path> or '
-                             '--checkpoint_dir <dir> containing at least one checkpoint.')
+            raise ValueError(
+                "Found no checkpoints. Must specify --checkpoint_path <path> or "
+                "--checkpoint_dir <dir> containing at least one checkpoint."
+            )
 
         if self.ensemble_variance:
-            if self.uncertainty_method in ['ensemble', None]:
+            if self.uncertainty_method in ["ensemble", None]:
                 warn(
-                    'The `--ensemble_variance` argument is deprecated and should \
-                        be replaced with `--uncertainty_method ensemble`.',
+                    "The `--ensemble_variance` argument is deprecated and should \
+                        be replaced with `--uncertainty_method ensemble`.",
                     DeprecationWarning,
                 )
-                self.uncertainty_method = 'ensemble'
+                self.uncertainty_method = "ensemble"
             else:
                 raise ValueError(
-                    f'Only one uncertainty method can be used at a time. \
+                    f"Only one uncertainty method can be used at a time. \
                         The arguement `--ensemble_variance` was provided along \
                         with the uncertainty method {self.uncertainty_method}. The `--ensemble_variance` \
-                        argument is deprecated and should be replaced with `--uncertainty_method ensemble`.'
+                        argument is deprecated and should be replaced with `--uncertainty_method ensemble`."
                 )
 
-        if self.calibration_interval_percentile <= 1 or self.calibration_interval_percentile >= 100:
-            raise ValueError('The calibration interval must be a percentile value in the range (1,100).')
+        if (
+            self.calibration_interval_percentile <= 1
+            or self.calibration_interval_percentile >= 100
+        ):
+            raise ValueError(
+                "The calibration interval must be a percentile value in the range (1,100)."
+            )
 
         if self.uncertainty_dropout_p < 0 or self.uncertainty_dropout_p > 1:
-            raise ValueError('The dropout probability must be in the range (0,1).')
+            raise ValueError("The dropout probability must be in the range (0,1).")
 
         if self.dropout_sampling_size <= 1:
-            raise ValueError('The argument `--dropout_sampling_size` must be an integer greater than 1.')
+            raise ValueError(
+                "The argument `--dropout_sampling_size` must be an integer greater than 1."
+            )
 
         # Validate that features provided for the prediction test set are also provided for the calibration set
-        for (features_argument, base_features_path, cal_features_path) in [
-            ('`--features_path`', self.features_path, self.calibration_features_path),
-            ('`--phase_features_path`', self.phase_features_path, self.calibration_phase_features_path),
-            ('`--atom_descriptors_path`', self.atom_descriptors_path, self.calibration_atom_descriptors_path),
-            ('`--bond_descriptors_path`', self.bond_descriptors_path, self.calibration_bond_descriptors_path)
+        for features_argument, base_features_path, cal_features_path in [
+            ("`--features_path`", self.features_path, self.calibration_features_path),
+            (
+                "`--phase_features_path`",
+                self.phase_features_path,
+                self.calibration_phase_features_path,
+            ),
+            (
+                "`--atom_descriptors_path`",
+                self.atom_descriptors_path,
+                self.calibration_atom_descriptors_path,
+            ),
+            (
+                "`--bond_descriptors_path`",
+                self.bond_descriptors_path,
+                self.calibration_bond_descriptors_path,
+            ),
         ]:
-            if base_features_path is not None and self.calibration_path is not None and cal_features_path is None:
-                raise ValueError(f'Additional features were provided using the argument {features_argument}. The same kinds of features must be provided for the calibration dataset.')
+            if (
+                base_features_path is not None
+                and self.calibration_path is not None
+                and cal_features_path is None
+            ):
+                raise ValueError(
+                    f"Additional features were provided using the argument {features_argument}. The same kinds of features must be provided for the calibration dataset."
+                )
 
 
 class InterpretArgs(CommonArgs):
@@ -1007,19 +1301,23 @@ class InterpretArgs(CommonArgs):
         )
 
         if self.features_path is not None:
-            raise ValueError('Cannot use --features_path <path> for interpretation since features '
-                             'need to be computed dynamically for molecular substructures. '
-                             'Please specify --features_generator <generator>.')
+            raise ValueError(
+                "Cannot use --features_path <path> for interpretation since features "
+                "need to be computed dynamically for molecular substructures. "
+                "Please specify --features_generator <generator>."
+            )
 
         if self.checkpoint_paths is None or len(self.checkpoint_paths) == 0:
-            raise ValueError('Found no checkpoints. Must specify --checkpoint_path <path> or '
-                             '--checkpoint_dir <dir> containing at least one checkpoint.')
+            raise ValueError(
+                "Found no checkpoints. Must specify --checkpoint_path <path> or "
+                "--checkpoint_dir <dir> containing at least one checkpoint."
+            )
 
 
 class FingerprintArgs(PredictArgs):
     """:class:`FingerprintArgs` includes :class:`PredictArgs` with additional arguments for the generation of latent fingerprint vectors."""
 
-    fingerprint_type: Literal['MPN', 'last_FFN'] = 'MPN'
+    fingerprint_type: Literal["MPN", "last_FFN"] = "MPN"
     """Choice of which type of latent fingerprint vector to use. Default is the output of the MPNN, excluding molecular features"""
 
 
@@ -1069,24 +1367,50 @@ class HyperoptArgs(TrainArgs):
             self.log_dir = self.save_dir
         if self.hyperopt_checkpoint_dir is None:
             self.hyperopt_checkpoint_dir = self.log_dir
-        
+
         # Set number of startup random trials
         if self.startup_random_iters is None:
             self.startup_random_iters = self.num_iters // 2
 
         # Construct set of search parameters
         supported_keywords = [
-            "basic", "learning_rate", "linked_hidden_size", "all",
-            "activation", "aggregation", "aggregation_norm", "batch_size", "depth",
-            "dropout", "ffn_hidden_size", "ffn_num_layers", "final_lr", "hidden_size",
-            "init_lr", "max_lr", "warmup_epochs"
+            "basic",
+            "learning_rate",
+            "linked_hidden_size",
+            "all",
+            "activation",
+            "aggregation",
+            "aggregation_norm",
+            "batch_size",
+            "depth",
+            "dropout",
+            "ffn_hidden_size",
+            "ffn_num_layers",
+            "final_lr",
+            "hidden_size",
+            "init_lr",
+            "max_lr",
+            "warmup_epochs",
         ]
         supported_parameters = [
-            "activation", "aggregation", "aggregation_norm", "batch_size", "depth",
-            "dropout", "ffn_hidden_size", "ffn_num_layers", "final_lr_ratio", "hidden_size",
-            "init_lr_ratio", "linked_hidden_size", "max_lr", "warmup_epochs"
+            "activation",
+            "aggregation",
+            "aggregation_norm",
+            "batch_size",
+            "depth",
+            "dropout",
+            "ffn_hidden_size",
+            "ffn_num_layers",
+            "final_lr_ratio",
+            "hidden_size",
+            "init_lr_ratio",
+            "linked_hidden_size",
+            "max_lr",
+            "warmup_epochs",
         ]
-        unsupported_keywords = set(self.search_parameter_keywords) - set(supported_keywords)
+        unsupported_keywords = set(self.search_parameter_keywords) - set(
+            supported_keywords
+        )
         if len(unsupported_keywords) != 0:
             raise NotImplementedError(
                 f"Keywords for what hyperparameters to include in the search are designated \
@@ -1098,9 +1422,13 @@ class HyperoptArgs(TrainArgs):
         if "all" in self.search_parameter_keywords:
             search_parameters.update(supported_parameters)
         if "basic" in self.search_parameter_keywords:
-            search_parameters.update(["depth", "ffn_num_layers", "dropout", "linked_hidden_size"])
+            search_parameters.update(
+                ["depth", "ffn_num_layers", "dropout", "linked_hidden_size"]
+            )
         if "learning_rate" in self.search_parameter_keywords:
-            search_parameters.update(["max_lr", "init_lr_ratio", "final_lr_ratio", "warmup_epochs"])
+            search_parameters.update(
+                ["max_lr", "init_lr_ratio", "final_lr_ratio", "warmup_epochs"]
+            )
         for kw in self.search_parameter_keywords:
             if kw in supported_parameters:
                 search_parameters.add(kw)
@@ -1108,7 +1436,9 @@ class HyperoptArgs(TrainArgs):
             search_parameters.add("init_lr_ratio")
         if "final_lr" in self.search_parameter_keywords:
             search_parameters.add("final_lr_ratio")
-        if "linked_hidden_size" in search_parameters and ("hidden_size" in search_parameters or "ffn_hidden_size" in search_parameters):
+        if "linked_hidden_size" in search_parameters and (
+            "hidden_size" in search_parameters or "ffn_hidden_size" in search_parameters
+        ):
             search_parameters.remove("linked_hidden_size")
             search_parameters.update(["hidden_size", "ffn_hidden_size"])
         self.search_parameters = list(search_parameters)
@@ -1117,9 +1447,9 @@ class HyperoptArgs(TrainArgs):
 class SklearnTrainArgs(TrainArgs):
     """:class:`SklearnTrainArgs` includes :class:`TrainArgs` along with additional arguments for training a scikit-learn model."""
 
-    model_type: Literal['random_forest', 'svm']
+    model_type: Literal["random_forest", "svm"]
     """scikit-learn model to use."""
-    class_weight: Literal['balanced'] = None
+    class_weight: Literal["balanced"] = None
     """How to weight classes (None means no class balance)."""
     single_task: bool = False
     """Whether to run each task separately (needed when dataset has null entries)."""
@@ -1129,7 +1459,7 @@ class SklearnTrainArgs(TrainArgs):
     """Number of bits in morgan fingerprint."""
     num_trees: int = 500
     """Number of random forest trees."""
-    impute_mode: Literal['single_task', 'median', 'mean', 'linear', 'frequent'] = None
+    impute_mode: Literal["single_task", "median", "mean", "linear", "frequent"] = None
     """How to impute missing data (None means no imputation)."""
 
 
@@ -1154,7 +1484,6 @@ class SklearnPredictArgs(CommonArgs):
     """List of paths to model checkpoints (:code:`.pkl` files)"""
 
     def process_args(self) -> None:
-
         self.smiles_columns = chemprop.data.utils.preprocess_smiles_columns(
             path=self.test_path,
             smiles_columns=self.smiles_columns,
@@ -1166,5 +1495,5 @@ class SklearnPredictArgs(CommonArgs):
             checkpoint_path=self.checkpoint_path,
             checkpoint_paths=self.checkpoint_paths,
             checkpoint_dir=self.checkpoint_dir,
-            ext='.pkl'
+            ext=".pkl",
         )
