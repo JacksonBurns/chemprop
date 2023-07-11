@@ -19,7 +19,13 @@ from tqdm import tqdm
 from scipy.stats.mstats import gmean
 
 from chemprop.args import PredictArgs, TrainArgs, FingerprintArgs
-from chemprop.data import StandardScaler, AtomBondScaler, MoleculeDataset, preprocess_smiles_columns, get_task_names
+from chemprop.data import (
+    StandardScaler,
+    AtomBondScaler,
+    MoleculeDataset,
+    preprocess_smiles_columns,
+    get_task_names,
+)
 from chemprop.models import MoleculeModel
 from chemprop.nn_utils import NoamLR
 from chemprop.models.ffn import MultiReadout
@@ -67,9 +73,14 @@ def save_checkpoint(
     if args is not None:
         args = Namespace(**args.as_dict())
 
-    data_scaler = {"means": scaler.means, "stds": scaler.stds} if scaler is not None else None
+    data_scaler = (
+        {"means": scaler.means, "stds": scaler.stds} if scaler is not None else None
+    )
     if atom_bond_scaler is not None:
-        atom_bond_scaler = {"means": atom_bond_scaler.means, "stds": atom_bond_scaler.stds}
+        atom_bond_scaler = {
+            "means": atom_bond_scaler.means,
+            "stds": atom_bond_scaler.stds,
+        }
     if features_scaler is not None:
         features_scaler = {"means": features_scaler.means, "stds": features_scaler.stds}
     if atom_descriptor_scaler is not None:
@@ -78,7 +89,10 @@ def save_checkpoint(
             "stds": atom_descriptor_scaler.stds,
         }
     if bond_descriptor_scaler is not None:
-        bond_descriptor_scaler = {"means": bond_descriptor_scaler.means, "stds": bond_descriptor_scaler.stds}
+        bond_descriptor_scaler = {
+            "means": bond_descriptor_scaler.means,
+            "stds": bond_descriptor_scaler.stds,
+        }
 
     state = {
         "args": args,
@@ -125,8 +139,13 @@ def load_checkpoint(
     pretrained_state_dict = {}
     for loaded_param_name in loaded_state_dict.keys():
         # Backward compatibility for parameter names
-        if re.match(r"(encoder\.encoder\.)([Wc])", loaded_param_name) and not args.reaction_solvent:
-            param_name = loaded_param_name.replace("encoder.encoder", "encoder.encoder.0")
+        if (
+            re.match(r"(encoder\.encoder\.)([Wc])", loaded_param_name)
+            and not args.reaction_solvent
+        ):
+            param_name = loaded_param_name.replace(
+                "encoder.encoder", "encoder.encoder.0"
+            )
         elif re.match(r"(^ffn)", loaded_param_name):
             param_name = loaded_param_name.replace("ffn", "readout")
         else:
@@ -137,7 +156,10 @@ def load_checkpoint(
             info(
                 f'Warning: Pretrained parameter "{loaded_param_name}" cannot be found in model parameters.'
             )
-        elif model_state_dict[param_name].shape != loaded_state_dict[loaded_param_name].shape:
+        elif (
+            model_state_dict[param_name].shape
+            != loaded_state_dict[loaded_param_name].shape
+        ):
             info(
                 f'Warning: Pretrained parameter "{loaded_param_name}" '
                 f"of shape {loaded_state_dict[loaded_param_name].shape} does not match corresponding "
@@ -177,9 +199,14 @@ def overwrite_state_dict(
     debug = logger.debug if logger is not None else print
 
     if model_param_name not in model_state_dict:
-        debug(f'Pretrained parameter "{model_param_name}" cannot be found in model parameters.')
+        debug(
+            f'Pretrained parameter "{model_param_name}" cannot be found in model parameters.'
+        )
 
-    elif model_state_dict[model_param_name].shape != loaded_state_dict[loaded_param_name].shape:
+    elif (
+        model_state_dict[model_param_name].shape
+        != loaded_state_dict[loaded_param_name].shape
+    ):
         debug(
             f'Pretrained parameter "{loaded_param_name}" '
             f"of shape {loaded_state_dict[loaded_param_name].shape} does not match corresponding "
@@ -248,8 +275,12 @@ def load_frzn_model(
             elif isinstance(model.readout, MultiReadout):  # Atomic/bond properties
                 if model.readout.shared_ffn:
                     ffn_param_names = [
-                        [f"readout.atom_ffn_base.0.{i*3+1}.weight", f"readout.atom_ffn_base.0.{i*3+1}.bias",
-                        f"readout.bond_ffn_base.0.{i*3+1}.weight", f"readout.bond_ffn_base.0.{i*3+1}.bias"]
+                        [
+                            f"readout.atom_ffn_base.0.{i*3+1}.weight",
+                            f"readout.atom_ffn_base.0.{i*3+1}.bias",
+                            f"readout.bond_ffn_base.0.{i*3+1}.weight",
+                            f"readout.bond_ffn_base.0.{i*3+1}.bias",
+                        ]
                         for i in range(current_args.frzn_ffn_layers)
                     ]
                 else:
@@ -258,15 +289,25 @@ def load_frzn_model(
                     for i in range(nmodels):
                         readout = model.readout.ffn_list[i]
                         if readout.constraint:
-                            ffn_param_names.extend([
-                                [f"readout.ffn_list.{i}.ffn.0.{j*3+1}.weight", f"readout.ffn_list.{i}.ffn.0.{j*3+1}.bias"]
-                                for j in range(current_args.frzn_ffn_layers)
-                            ])
+                            ffn_param_names.extend(
+                                [
+                                    [
+                                        f"readout.ffn_list.{i}.ffn.0.{j*3+1}.weight",
+                                        f"readout.ffn_list.{i}.ffn.0.{j*3+1}.bias",
+                                    ]
+                                    for j in range(current_args.frzn_ffn_layers)
+                                ]
+                            )
                         else:
-                            ffn_param_names.extend([
-                                [f"readout.ffn_list.{i}.ffn_readout.{j*3+1}.weight", f"readout.ffn_list.{i}.ffn_readout.{j*3+1}.bias"]
-                                for j in range(current_args.frzn_ffn_layers)
-                            ])
+                            ffn_param_names.extend(
+                                [
+                                    [
+                                        f"readout.ffn_list.{i}.ffn_readout.{j*3+1}.weight",
+                                        f"readout.ffn_list.{i}.ffn_readout.{j*3+1}.bias",
+                                    ]
+                                    for j in range(current_args.frzn_ffn_layers)
+                                ]
+                            )
             ffn_param_names = [item for sublist in ffn_param_names for item in sublist]
 
             # Freeze MPNN and FFN layers
@@ -328,7 +369,10 @@ def load_frzn_model(
                 loaded_encoder_param_names, model_encoder_param_names
             ):
                 model_state_dict = overwrite_state_dict(
-                    loaded_param_name, model_param_name, loaded_state_dict, model_state_dict
+                    loaded_param_name,
+                    model_param_name,
+                    loaded_state_dict,
+                    model_state_dict,
                 )
 
         if current_args.frzn_ffn_layers > 0:
@@ -350,7 +394,9 @@ def load_frzn_model(
                 "must be equal to 1 for freeze_first_only to be used!"
             )
 
-        if (current_args.checkpoint_frzn is not None) & (not (current_args.frzn_ffn_layers > 0)):
+        if (current_args.checkpoint_frzn is not None) & (
+            not (current_args.frzn_ffn_layers > 0)
+        ):
             encoder_param_names = [
                 [
                     (
@@ -362,7 +408,9 @@ def load_frzn_model(
                 ]
                 for mol_num in range(current_args.number_of_molecules)
             ]
-            encoder_param_names = [item for sublist in encoder_param_names for item in sublist]
+            encoder_param_names = [
+                item for sublist in encoder_param_names for item in sublist
+            ]
 
             for param_name in encoder_param_names:
                 model_state_dict = overwrite_state_dict(
@@ -381,7 +429,9 @@ def load_frzn_model(
                 ]
                 for mol_num in range(current_args.number_of_molecules)
             ]
-            encoder_param_names = [item for sublist in encoder_param_names for item in sublist]
+            encoder_param_names = [
+                item for sublist in encoder_param_names for item in sublist
+            ]
             ffn_param_names = [
                 [f"readout.{i*3+1}.weight", f"readout.{i*3+1}.bias"]
                 for i in range(current_args.frzn_ffn_layers)
@@ -407,7 +457,9 @@ def load_frzn_model(
 
 def load_scalers(
     path: str,
-) -> Tuple[StandardScaler, StandardScaler, StandardScaler, StandardScaler, List[StandardScaler]]:
+) -> Tuple[
+    StandardScaler, StandardScaler, StandardScaler, StandardScaler, List[StandardScaler]
+]:
     """
     Loads the scalers a model was trained with.
 
@@ -418,18 +470,25 @@ def load_scalers(
     state = torch.load(path, map_location=lambda storage, loc: storage)
 
     if state["data_scaler"] is not None:
-        scaler = StandardScaler(state["data_scaler"]["means"], state["data_scaler"]["stds"])
+        scaler = StandardScaler(
+            state["data_scaler"]["means"], state["data_scaler"]["stds"]
+        )
     else:
         scaler = None
 
     if state["features_scaler"] is not None:
         features_scaler = StandardScaler(
-            state["features_scaler"]["means"], state["features_scaler"]["stds"], replace_nan_token=0
+            state["features_scaler"]["means"],
+            state["features_scaler"]["stds"],
+            replace_nan_token=0,
         )
     else:
         features_scaler = None
 
-    if "atom_descriptor_scaler" in state.keys() and state["atom_descriptor_scaler"] is not None:
+    if (
+        "atom_descriptor_scaler" in state.keys()
+        and state["atom_descriptor_scaler"] is not None
+    ):
         atom_descriptor_scaler = StandardScaler(
             state["atom_descriptor_scaler"]["means"],
             state["atom_descriptor_scaler"]["stds"],
@@ -438,7 +497,10 @@ def load_scalers(
     else:
         atom_descriptor_scaler = None
 
-    if "bond_descriptor_scaler" in state.keys() and state["bond_descriptor_scaler"] is not None:
+    if (
+        "bond_descriptor_scaler" in state.keys()
+        and state["bond_descriptor_scaler"] is not None
+    ):
         bond_descriptor_scaler = StandardScaler(
             state["bond_descriptor_scaler"]["means"],
             state["bond_descriptor_scaler"]["stds"],
@@ -448,7 +510,7 @@ def load_scalers(
         bond_descriptor_scaler = None
 
     if "atom_bond_scaler" in state.keys() and state["atom_bond_scaler"] is not None:
-        atom_bond_scaler =AtomBondScaler(
+        atom_bond_scaler = AtomBondScaler(
             state["atom_bond_scaler"]["means"],
             state["atom_bond_scaler"]["stds"],
             replace_nan_token=0,
@@ -458,7 +520,13 @@ def load_scalers(
     else:
         atom_bond_scaler = None
 
-    return scaler, features_scaler, atom_descriptor_scaler, bond_descriptor_scaler, atom_bond_scaler
+    return (
+        scaler,
+        features_scaler,
+        atom_descriptor_scaler,
+        bond_descriptor_scaler,
+        atom_bond_scaler,
+    )
 
 
 def load_args(path: str) -> TrainArgs:
@@ -523,7 +591,9 @@ def build_lr_scheduler(
     )
 
 
-def create_logger(name: str, save_dir: str = None, quiet: bool = False) -> logging.Logger:
+def create_logger(
+    name: str, save_dir: str = None, quiet: bool = False
+) -> logging.Logger:
     """
     Creates a logger with a stream handler and two file handlers.
 
@@ -590,7 +660,11 @@ def timeit(logger_name: str = None) -> Callable[[Callable], Callable]:
             start_time = time()
             result = func(*args, **kwargs)
             delta = timedelta(seconds=round(time() - start_time))
-            info = logging.getLogger(logger_name).info if logger_name is not None else print
+            info = (
+                logging.getLogger(logger_name).info
+                if logger_name is not None
+                else print
+            )
             info(f"Elapsed time = {delta}")
 
             return result
@@ -635,7 +709,9 @@ def save_smiles_splits(
     save_split_indices = True
 
     if not isinstance(smiles_columns, list):
-        smiles_columns = preprocess_smiles_columns(path=data_path, smiles_columns=smiles_columns)
+        smiles_columns = preprocess_smiles_columns(
+            path=data_path, smiles_columns=smiles_columns
+        )
 
     with open(data_path) as f:
         f = open(data_path)
@@ -657,8 +733,10 @@ def save_smiles_splits(
 
     features_header = []
     if features_path is not None:
-        extension_sets = set([os.path.splitext(feat_path)[1] for feat_path in features_path])
-        if extension_sets == {'.csv'}:
+        extension_sets = set(
+            [os.path.splitext(feat_path)[1] for feat_path in features_path]
+        )
+        if extension_sets == {".csv"}:
             for feat_path in features_path:
                 with open(feat_path, "r") as f:
                     reader = csv.reader(f)
@@ -671,7 +749,11 @@ def save_smiles_splits(
             constraints_header = next(reader)
 
     all_split_indices = []
-    for dataset, name in [(train_data, "train"), (val_data, "val"), (test_data, "test")]:
+    for dataset, name in [
+        (train_data, "train"),
+        (val_data, "val"),
+        (test_data, "test"),
+    ]:
         if dataset is None:
             continue
 
@@ -689,22 +771,31 @@ def save_smiles_splits(
             writer.writerow(smiles_columns + task_names)
             dataset_targets = dataset.targets()
             for i, smiles in enumerate(dataset.smiles()):
-                targets = [x.tolist() if isinstance(x, np.ndarray) else x for x in dataset_targets[i]]
+                targets = [
+                    x.tolist() if isinstance(x, np.ndarray) else x
+                    for x in dataset_targets[i]
+                ]
                 writer.writerow(smiles + targets)
 
         if features_path is not None:
             dataset_features = dataset.features()
-            if extension_sets == {'.csv'}:
-                with open(os.path.join(save_dir, f"{name}_features.csv"), "w", newline="") as f:
+            if extension_sets == {".csv"}:
+                with open(
+                    os.path.join(save_dir, f"{name}_features.csv"), "w", newline=""
+                ) as f:
                     writer = csv.writer(f)
                     writer.writerow(features_header)
                     writer.writerows(dataset_features)
             else:
-                np.save(os.path.join(save_dir, f"{name}_features.npy"), dataset_features)
+                np.save(
+                    os.path.join(save_dir, f"{name}_features.npy"), dataset_features
+                )
 
         if constraints_path is not None:
             dataset_constraints = [d.raw_constraints for d in dataset._data]
-            with open(os.path.join(save_dir, f"{name}_constraints.csv"), "w", newline="") as f:
+            with open(
+                os.path.join(save_dir, f"{name}_constraints.csv"), "w", newline=""
+            ) as f:
                 writer = csv.writer(f)
                 writer.writerow(constraints_header)
                 writer.writerows(dataset_constraints)
@@ -729,7 +820,9 @@ def save_smiles_splits(
         if name == "train":
             data_weights = dataset.data_weights()
             if any([w != 1 for w in data_weights]):
-                with open(os.path.join(save_dir, f"{name}_weights.csv"), "w", newline="") as f:
+                with open(
+                    os.path.join(save_dir, f"{name}_weights.csv"), "w", newline=""
+                ) as f:
                     writer = csv.writer(f)
                     writer.writerow(["data weights"])
                     for weight in data_weights:
@@ -827,8 +920,11 @@ def update_prediction_args(
 
     # If features were used during training, they must be used when predicting
     if validate_feature_sources:
-        if ((train_args.features_path is None) != (predict_args.features_path is None)) or (
-            (train_args.features_generator is None) != (predict_args.features_generator is None)
+        if (
+            (train_args.features_path is None) != (predict_args.features_path is None)
+        ) or (
+            (train_args.features_generator is None)
+            != (predict_args.features_generator is None)
         ):
             raise ValueError(
                 "Features were used during training so they must be specified again during "
@@ -856,16 +952,32 @@ def multitask_mean(
     :axis: The axis along which to take the mean.
     :return: The combined score across the tasks.
     """
-    scale_dependent_metrics = ["rmse", "mae", "mse", "bounded_rmse", "bounded_mae", "bounded_mse"]
+    scale_dependent_metrics = [
+        "rmse",
+        "mae",
+        "mse",
+        "bounded_rmse",
+        "bounded_mae",
+        "bounded_mse",
+    ]
     nonscale_dependent_metrics = [
-        "auc", "prc-auc", "r2", "accuracy", "cross_entropy",
-        "binary_cross_entropy", "sid", "wasserstein", "f1", "mcc",
+        "auc",
+        "prc-auc",
+        "r2",
+        "accuracy",
+        "cross_entropy",
+        "binary_cross_entropy",
+        "sid",
+        "wasserstein",
+        "f1",
+        "mcc",
     ]
 
     if metric in scale_dependent_metrics:
         return gmean(scores, axis=axis)
     elif metric in nonscale_dependent_metrics:
-        return np.mean(scores, axis=axis)
+        print("I changed this to nanmean")
+        return np.nanmean(scores, axis=axis)
     else:
         raise NotImplementedError(
             f"The metric used, {metric}, has not been added to the list of\
