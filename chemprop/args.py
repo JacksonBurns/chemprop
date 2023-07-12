@@ -36,6 +36,7 @@ Metric = Literal[
     "bounded_mae",
     "bounded_mse",
     "hamming",
+    "precision",
 ]
 
 
@@ -836,6 +837,7 @@ class TrainArgs(CommonArgs):
                             "f1",
                             "mcc",
                             "hamming",
+                            "precision",
                         ]
                     ),
                     (

@@ -16,6 +16,7 @@ from sklearn.metrics import (
     log_loss,
     f1_score,
     matthews_corrcoef,
+    precision_score,
 )
 
 
@@ -47,6 +48,9 @@ def get_metric_func(
 
     if metric == "hamming":
         return hamming_score
+
+    if metric == "precision":
+        return precision_helper
 
     if metric == "prc-auc":
         return prc_auc
@@ -102,6 +106,10 @@ def hamming_score(targets: List[int], preds: List[float]) -> float:
         if all(x == y for x, y in zip(targets, [int(i > 0.5) for i in preds]))
         else 0
     )
+
+
+def precision_helper(targets, preds):
+    return precision_score(targets, [int(i > 0.5) for i in preds], zero_division=0.0)
 
 
 def prc_auc(targets: List[int], preds: List[float]) -> float:

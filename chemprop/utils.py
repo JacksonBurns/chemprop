@@ -972,6 +972,7 @@ def multitask_mean(
         "f1",
         "mcc",
         "hamming",
+        "precision",
     ]
 
     if metric in scale_dependent_metrics:
