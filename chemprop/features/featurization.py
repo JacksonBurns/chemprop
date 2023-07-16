@@ -19,17 +19,17 @@ class Featurization_parameters:
         self.MAX_ATOMIC_NUM = 100
         self.ATOM_FEATURES = {
             "atomic_num": list(range(self.MAX_ATOMIC_NUM)),
-            "degree": [0, 1, 2, 3, 4, 5],
-            "formal_charge": [-1, -2, 1, 2, 0],
-            "chiral_tag": [0, 1, 2, 3],
-            "num_Hs": [0, 1, 2, 3, 4],
-            "hybridization": [
-                Chem.rdchem.HybridizationType.SP,
-                Chem.rdchem.HybridizationType.SP2,
-                Chem.rdchem.HybridizationType.SP3,
-                Chem.rdchem.HybridizationType.SP3D,
-                Chem.rdchem.HybridizationType.SP3D2,
-            ],
+            # "degree": [0, 1, 2, 3, 4, 5],
+            # "formal_charge": [-1, -2, 1, 2, 0],
+            # "chiral_tag": [0, 1, 2, 3],
+            # "num_Hs": [0, 1, 2, 3, 4],
+            # "hybridization": [
+            #     Chem.rdchem.HybridizationType.SP,
+            #     Chem.rdchem.HybridizationType.SP2,
+            #     Chem.rdchem.HybridizationType.SP3,
+            #     Chem.rdchem.HybridizationType.SP3D,
+            #     Chem.rdchem.HybridizationType.SP3D2,
+            # ],
         }
 
         # Distance feature sizes
@@ -41,9 +41,9 @@ class Featurization_parameters:
         )
 
         # len(choices) + 1 to include room for uncommon values; + 2 at end for IsAromatic and mass
-        self.ATOM_FDIM = (
-            sum(len(choices) + 1 for choices in self.ATOM_FEATURES.values()) + 2
-        )
+        self.ATOM_FDIM = sum(
+            len(choices) + 1 for choices in self.ATOM_FEATURES.values()
+        )  # + 2
         self.EXTRA_ATOM_FDIM = 0
         self.BOND_FDIM = 14
         self.EXTRA_BOND_FDIM = 0
@@ -247,21 +247,21 @@ def atom_features(
             onek_encoding_unk(
                 atom.GetAtomicNum() - 1, PARAMS.ATOM_FEATURES["atomic_num"]
             )
-            + onek_encoding_unk(atom.GetTotalDegree(), PARAMS.ATOM_FEATURES["degree"])
-            + onek_encoding_unk(
-                atom.GetFormalCharge(), PARAMS.ATOM_FEATURES["formal_charge"]
-            )
-            + onek_encoding_unk(
-                int(atom.GetChiralTag()), PARAMS.ATOM_FEATURES["chiral_tag"]
-            )
-            + onek_encoding_unk(
-                int(atom.GetTotalNumHs()), PARAMS.ATOM_FEATURES["num_Hs"]
-            )
-            + onek_encoding_unk(
-                int(atom.GetHybridization()), PARAMS.ATOM_FEATURES["hybridization"]
-            )
-            + [1 if atom.GetIsAromatic() else 0]
-            + [atom.GetMass() * 0.01]
+            # + onek_encoding_unk(atom.GetTotalDegree(), PARAMS.ATOM_FEATURES["degree"])
+            # + onek_encoding_unk(
+            #     atom.GetFormalCharge(), PARAMS.ATOM_FEATURES["formal_charge"]
+            # )
+            # + onek_encoding_unk(
+            #     int(atom.GetChiralTag()), PARAMS.ATOM_FEATURES["chiral_tag"]
+            # )
+            # + onek_encoding_unk(
+            #     int(atom.GetTotalNumHs()), PARAMS.ATOM_FEATURES["num_Hs"]
+            # )
+            # + onek_encoding_unk(
+            #     int(atom.GetHybridization()), PARAMS.ATOM_FEATURES["hybridization"]
+            # )
+            # + [1 if atom.GetIsAromatic() else 0]
+            # + [atom.GetMass() * 0.01]
         )  # scaled to about the same range as other features
         if functional_groups is not None:
             features += functional_groups

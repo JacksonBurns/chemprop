@@ -716,7 +716,8 @@ def get_data(
                 bond_features = descriptors
             elif args.bond_descriptors == "descriptor":
                 bond_descriptors = descriptors
-        atom_descriptors = atom_descriptors[0]
+        if atom_descriptors is not None:
+            atom_descriptors = atom_descriptors[0]
         data = MoleculeDataset(
             [
                 MoleculeDatapoint(
