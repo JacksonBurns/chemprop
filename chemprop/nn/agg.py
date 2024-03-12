@@ -28,7 +28,6 @@ def _broadcast(src: Tensor, other: Tensor, dim: int):
 
 
 def _scatter_softmax(src: Tensor, index: Tensor, dim: int = -1) -> Tensor:
-
     index = _broadcast(index, src, dim)
 
     max_value_per_index = scatter_reduce(src, dim, index, src, "amax")[0]
