@@ -1,6 +1,5 @@
 from abc import abstractmethod
-from torch import Tensor, nn
-from torch_scatter import scatter, scatter_softmax
+from torch import Tensor, nn, scatter_reduce
 
 from chemprop.utils import ClassRegistry
 from chemprop.nn.hparams import HasHParams
@@ -14,6 +13,35 @@ __all__ = [
     "NormAggregation",
     "AttentiveAggregation",
 ]
+
+
+def _broadcast(src: Tensor, other: Tensor, dim: int):
+    if dim < 0:
+        dim = other.dim() + dim
+    if src.dim() == 1:
+        for _ in range(0, dim):
+            src = src.unsqueeze(0)
+    for _ in range(src.dim(), other.dim()):
+        src = src.unsqueeze(-1)
+    src = src.expand(other.size())
+    return src
+
+
+def _scatter_softmax(src: Tensor, index: Tensor, dim: int = -1) -> Tensor:
+
+    index = _broadcast(index, src, dim)
+
+    max_value_per_index = scatter_reduce(src, dim, index, src, "amax")[0]
+    
+    max_per_src_element = max_value_per_index.gather(dim, index)
+
+    recentered_scores = src - max_per_src_element
+    recentered_scores_exp = recentered_scores.exp_()
+
+    sum_per_index = scatter_reduce(recentered_scores_exp, dim, index, recentered_scores_exp, "sum")
+    normalizing_constants = sum_per_index.gather(dim, index)
+
+    return recentered_scores_exp.div(normalizing_constants)
 
 
 class Aggregation(nn.Module, HasHParams):
@@ -71,7 +99,7 @@ class MeanAggregation(Aggregation):
     """
 
     def forward(self, H: Tensor, batch: Tensor) -> Tensor:
-        return scatter(H, batch, self.dim, reduce="mean")
+        return scatter_reduce(H, self.dim, batch, H, "mean")
 
 
 @AggregationRegistry.register("sum")
@@ -84,7 +112,7 @@ class SumAggregation(Aggregation):
     """
 
     def forward(self, H: Tensor, batch: Tensor) -> Tensor:
-        return scatter(H, batch, self.dim, reduce="sum")
+        return scatter_reduce(H, self.dim, batch, H, "sum")
 
 
 @AggregationRegistry.register("norm")
@@ -112,6 +140,6 @@ class AttentiveAggregation(Aggregation):
         self.W = nn.Linear(output_size, 1)
 
     def forward(self, H: Tensor, batch: Tensor) -> Tensor:
-        alphas = scatter_softmax(self.W(H), batch, self.dim)
+        alphas = _scatter_softmax(self.W(H), batch, self.dim)
 
-        return scatter(alphas * H, batch, self.dim, reduce="sum")
+        return scatter_reduce(alphas * H, self.dim, batch, alphas * H, reduce="sum")
