@@ -32,7 +32,7 @@ def _scatter_softmax(src: Tensor, index: Tensor, dim: int = -1) -> Tensor:
     index = _broadcast(index, src, dim)
 
     max_value_per_index = scatter_reduce(src, dim, index, src, "amax")[0]
-    
+
     max_per_src_element = max_value_per_index.gather(dim, index)
 
     recentered_scores = src - max_per_src_element
