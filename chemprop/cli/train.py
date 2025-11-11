@@ -1235,8 +1235,7 @@ def build_model(
                 mp_blocks = []
                 for _ in range(train_dset.n_components):
                     foundation = MPNN.load_from_file(
-                        args.from_foundation,
-                        map_location=torch.device("cpu"),
+                        args.from_foundation, map_location=torch.device("cpu")
                     )  # must re-load for each, no good way to copy
                     mp_blocks.append(foundation.message_passing)
                 mp_block = MulticomponentMessagePassing(
@@ -1244,8 +1243,7 @@ def build_model(
                 )
             else:
                 foundation = MPNN.load_from_file(
-                    args.from_foundation,
-                    map_location=torch.device("cpu"),
+                    args.from_foundation, map_location=torch.device("cpu")
                 )
                 mp_block = foundation.message_passing
             agg = foundation.agg
