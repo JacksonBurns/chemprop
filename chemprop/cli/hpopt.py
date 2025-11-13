@@ -462,7 +462,9 @@ def tune_model(
 
     def train_func(config):
         trainer = TorchTrainer(
-            lambda cfg: train_model(cfg, args, train_dset, val_dset, logger, output_transform, input_transforms),
+            lambda cfg: train_model(
+                cfg, args, train_dset, val_dset, logger, output_transform, input_transforms
+            ),
             scaling_config=scaling_config,
             run_config=run_config,
             train_loop_config=config,
