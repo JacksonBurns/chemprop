@@ -460,13 +460,14 @@ def tune_model(
         storage_path=args.hpopt_save_dir.absolute() / "ray_results",
     )
 
-    ray_trainer = TorchTrainer(
-        lambda config: train_model(
-            config, args, train_dset, val_dset, logger, output_transform, input_transforms
-        ),
-        scaling_config=scaling_config,
-        run_config=run_config,
-    )
+    def train_func(config):
+        trainer = TorchTrainer(
+            lambda cfg: train_model(cfg, args, train_dset, val_dset, logger, output_transform, input_transforms),
+            scaling_config=scaling_config,
+            run_config=run_config,
+            train_loop_config=config,
+        )
+        return trainer.fit()
 
     match args.raytune_search_algorithm:
         case "random":
@@ -499,7 +500,7 @@ def tune_model(
     )
 
     tuner = tune.Tuner(
-        ray_trainer,
+        train_func,
         param_space={
             "train_loop_config": build_search_space(args.search_parameter_keywords, args.epochs)
         },
