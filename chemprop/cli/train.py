@@ -1676,7 +1676,7 @@ def build_MAB_model(
     bond_predictor = (
         Factory.build(
             predictor_cls,
-            input_dim=(mp.output_dims[1] * 2),
+            input_dim=mp.output_dims[1],
             n_tasks=n_taskss[2],
             hidden_dim=args.bond_ffn_hidden_dim,
             n_layers=args.bond_ffn_num_layers,
@@ -1709,7 +1709,7 @@ def build_MAB_model(
         if n_bond_cons:
             bond_constrainer = ConstrainerFFN(
                 n_constraints=n_bond_cons,
-                fp_dim=(mp.output_dims[1] * 2),
+                fp_dim=mp.output_dims[1],
                 hidden_dim=args.bond_constrainer_ffn_hidden_dim,
                 n_layers=args.bond_constrainer_ffn_num_layers,
                 dropout=args.dropout,

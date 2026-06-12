@@ -234,7 +234,6 @@ class MolAtomBondMPNN(pl.LightningModule):
             if H_g is not None
             else None
         )
-        H_e = torch.cat([H_e, H_e[bmg.rev_edge_index]], dim=1) if H_e is not None else None
         return H_g, H_v, H_e
 
     def encoding(
