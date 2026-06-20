@@ -65,6 +65,16 @@ Option 2: Installing from source using pip
 .. note:: 
     You can also use this option to install additional optional dependencies by replacing ``pip install -e .`` with ``pip install -e ".[hpopt,dev,docs,test,notebooks,cuik_molmaker]" --extra-index-url https://pypi.nvidia.com/rdkit-latest/``.
 
+    Optional dependency groups:
+
+    * ``hpopt``: Hyperparameter optimization (Ray Tune, Hyperopt, Optuna).
+    * ``dev``: Development tools (black, flake8, pytest, isort).
+    * ``docs``: Documentation building (Sphinx, nbsphinx).
+    * ``test``: Test runner (pytest).
+    * ``notebooks``: Jupyter notebook support (ipykernel, matplotlib).
+    * ``cuik_molmaker``: Accelerated molecule featurization (GPU).
+    * ``pyg``: Convert Chemprop models to PyTorch Geometric format.
+
 .. _install-from-source-using-environment-yml:
 
 Option 3: Installing from source using environment.yml

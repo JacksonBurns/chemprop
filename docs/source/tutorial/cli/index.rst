@@ -16,7 +16,7 @@ where ``COMMAND`` is one of the following:
 
 * ``train``: Train a model.
 * ``predict``: Make predictions with a trained model.
-* ``convert``: Convert a trained Chemprop model from v1 to v2.
+* ``convert``: Convert a trained Chemprop model (v1 to v2, v2.0 to v2.1, or to PyTorch Geometric format).
 * ``hpopt``: Perform hyperparameter optimization.
 * ``fingerprint``: Use a trained model to compute a learned representation.
 

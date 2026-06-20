@@ -12,15 +12,19 @@ logger = logging.getLogger(__name__)
 
 class ConvertSubcommand(Subcommand):
     COMMAND = "convert"
-    HELP = "Convert model checkpoint (.pt) to more recent version (.pt)."
+    HELP = "Convert model checkpoint (.pt) to more recent version or to PyTorch Geometric format."
 
     @classmethod
     def add_args(cls, parser: ArgumentParser) -> ArgumentParser:
         parser.add_argument(
             "-c",
             "--conversion",
-            choices=["v1_to_v2", "v2_0_to_v2_1"],
-            help="Conversion to perform. Models converted from v1 to v2 must be run with the v1 featurizer via `--multi-hot-atom-featurizer-mode v1`.",
+            choices=["v1_to_v2", "v2_0_to_v2_1", "to_pyg"],
+            help=(
+                "Conversion to perform. Models converted from v1 to v2 must be run with the v1 "
+                "featurizer via `--multi-hot-atom-featurizer-mode v1`. Use `to_pyg` to convert "
+                "a v2 model to PyTorch Geometric format (requires `pip install chemprop[pyg]`)."
+            ),
             default="v1_to_v2",
         )
         parser.add_argument(
@@ -45,6 +49,8 @@ class ConvertSubcommand(Subcommand):
             _suffix = "_v2.pt"
         elif args.conversion == "v2_0_to_v2_1":
             _suffix = "_v2_1.pt"
+        elif args.conversion == "to_pyg":
+            _suffix = "_pyg.pt"
         if args.output_path is None:
             args.output_path = Path(args.input_path.stem + _suffix)
         if args.output_path.suffix != ".pt":
@@ -59,6 +65,15 @@ class ConvertSubcommand(Subcommand):
             convert_model_file_v1_to_v2(args.input_path, args.output_path)
         elif args.conversion == "v2_0_to_v2_1":
             convert_model_file_v2_0_to_v2_1(args.input_path, args.output_path)
+        elif args.conversion == "to_pyg":
+            try:
+                from chemprop.utils.convert_to_pyg import convert_model_file_to_pyg
+            except ImportError:
+                raise ImportError(
+                    "Converting to PyTorch Geometric format requires the 'pyg' optional dependency. "
+                    "Install it with: pip install chemprop[pyg]"
+                )
+            convert_model_file_to_pyg(args.input_path, args.output_path)
 
 
 if __name__ == "__main__":

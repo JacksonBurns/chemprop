@@ -29,13 +29,13 @@ Model Modules:
 * :doc:`models/multicomponent_mpnn_model`
 
 Other module and workflow tutorials:
-
-* :doc:`activation`
-* :doc:`loss_functions`
-* :doc:`metrics`
-* :doc:`saving_and_loading`
-* :doc:`ensembling`
-* :doc:`scaling`
+ * :doc:`activation`
+ * :doc:`loss_functions`
+ * :doc:`metrics`
+ * :doc:`saving_and_loading`
+ * :doc:`ensembling`
+ * :doc:`scaling`
+ * :doc:`pyg_conversion`
 
 .. toctree::
     :maxdepth: 1
@@ -61,3 +61,4 @@ Other module and workflow tutorials:
     saving_and_loading
     ensembling
     scaling
+    pyg_conversion
