@@ -1479,7 +1479,7 @@ def build_model(
                     else:
                         logger.info(f"Loading cached CheMeleon from {model_path}")
                     logger.info(
-                        "Please cite DOI: 10.48550/arXiv.2506.15792 when using CheMeleon in published work"
+                        "Please cite DOI: 10.1021/acs.jcim.6c01546 when using CheMeleon in published work"
                     )
                     chemeleon_mp = torch.load(model_path, weights_only=True)
                     if is_multi:
